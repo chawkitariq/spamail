@@ -10,7 +10,7 @@ It takes raw email files, preprocesses them into structured data, trains a class
 
 1. **Clone the repo**  
    ```bash
-   git clone https://github.com/yourusername/spamail.git
+   git clone https://github.com/chawkitariq/spamail.git
    cd spamail
    ```
 
