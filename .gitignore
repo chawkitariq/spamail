@@ -21,7 +21,7 @@ ENV/
 *.ipynb
 
 # Data
-datas/processed/*
+datas/processed/*.csv
 datas/raw/*.csv
 *.csv
 
@@ -30,7 +30,7 @@ datas/raw/*.csv
 *.h5
 *.pt
 *.pth
-models/*
+models/*.plk
 
 # IDEs
 .vscode/
