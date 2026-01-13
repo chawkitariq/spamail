@@ -31,7 +31,7 @@ It takes raw email files, preprocesses them into structured data, trains a class
 Run the preprocessing script to convert raw emails into a structured CSV:
 
 ```bash
-python3 src/preprocessing.py
+python3 src/preprocess.py
 ```
 
 This generates:
