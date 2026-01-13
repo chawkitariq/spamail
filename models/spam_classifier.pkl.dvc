@@ -1,0 +1,5 @@
+outs:
+- md5: fe9f9448a86e50210a5cf536f6821805
+  size: 160791
+  hash: md5
+  path: spam_classifier.pkl
