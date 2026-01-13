@@ -1,0 +1,5 @@
+[core]
+    remote = aws
+['remote "aws"']
+    url = s3://spamail-dvc
+    region = eu-west-3
