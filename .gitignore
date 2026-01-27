@@ -67,3 +67,6 @@ htmlcov/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Zip files
+**/*.zip
