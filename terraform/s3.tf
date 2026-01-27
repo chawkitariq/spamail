@@ -1,10 +1,6 @@
 resource "aws_s3_bucket" "spamail_bucket" {
-  bucket = "spamail-bucket"
-
-  tags = {
-    Name        = "Spamail Bucket"
-    Environment = "production"
-  }
+  bucket        = "spamail-bucket"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "spamail_bucket_versioning" {
@@ -21,19 +17,18 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.preprocess_lambda.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "raw/ham"
+    filter_prefix       = "raw/ham/"
   }
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.preprocess_lambda.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "raw/spam"
+    filter_prefix       = "raw/spam/"
   }
 
   depends_on = [aws_lambda_permission.allow_s3_invoke]
 }
 
-# Create folder structure by uploading .gitkeep files
 resource "aws_s3_object" "raw_ham_folder" {
   bucket  = aws_s3_bucket.spamail_bucket.id
   key     = "raw/ham/.gitkeep"

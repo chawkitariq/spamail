@@ -4,10 +4,8 @@ import pandas as pd
 import re
 import io
 import os
-from datetime import datetime
 
 s3_client = boto3.client('s3')
-
 
 def clean_text(text):
     """Clean email text by removing HTML tags and special characters."""
