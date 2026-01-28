@@ -11,7 +11,6 @@ def clean_text(text):
     """Clean email text by removing HTML tags and special characters."""
     text = re.sub(r"<.*?>", " ", text)       # Remove HTML tags
     text = re.sub(r"[^a-zA-Z\s]", " ", text) # Keep only letters and spaces
-    text = re.sub(r"\s+", " ", text)         # Normalize whitespace
     return text.lower().strip()
 
 
