@@ -14,81 +14,49 @@ def clean_text(text):
     return text.lower().strip()
 
 
-def process_emails(bucket_name, prefix, label):
-    """
-    Process all emails from a specific folder (ham or spam).
-    
-    Args:
-        bucket_name: S3 bucket name
-        prefix: Folder path (e.g., 'raw/ham/')
-        label: 0 for ham, 1 for spam
-    
-    Returns:
-        List of email dictionaries with text and label
-    """
-    emails = []
-    email_type = "ham" if label == 0 else "spam"
-    
-    response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-    
-    if 'Contents' not in response:
-        print(f"No files found in {prefix}")
-        return emails
-    
-    for obj in response['Contents']:
-        key = obj['Key']
-        
-        # Skip directories and .gitkeep files
-        if key.endswith('/') or key.endswith('.gitkeep'):
-            continue
-        
-        try:
-            # Download and clean the file
-            file_obj = s3_client.get_object(Bucket=bucket_name, Key=key)
-            content = file_obj['Body'].read().decode('utf-8', errors='ignore')
-            cleaned_text = clean_text(content)
-            
-            emails.append({'text': cleaned_text, 'label': label})
-            print(f"Processed: {key}")
-            
-        except Exception as e:
-            print(f"Failed to process {key}: {e}")
-            continue
-    
-    print(f"Completed: {len(emails)} {email_type} emails processed")
-    return emails
-
-
 def lambda_handler(event, context):
     """
-    Lambda function to preprocess spam/ham emails.
-    Triggered by S3 uploads, processes all files in raw/ folders,
-    and creates a CSV file in the processed/ folder.
+    Process a single email file triggered by S3 upload and append to CSV.
+    Prevents infinite loops by only processing files in raw/ham/ or raw/spam/.
     """
     try:
         bucket_name = os.environ.get('BUCKET_NAME')
-        if not bucket_name:
-            raise ValueError("BUCKET_NAME environment variable not set")
         
-        ham_emails = process_emails(bucket_name, 'raw/ham/', label=0)
-        spam_emails = process_emails(bucket_name, 'raw/spam/', label=1)
+        # Get the uploaded file details from S3 event
+        triggered_key = event['Records'][0]['s3']['object']['key']
+        print(f"Processing: {triggered_key}")
         
-        all_emails = ham_emails + spam_emails
+        # Skip non-email files and prevent infinite loops
+        if triggered_key.endswith(('.gitkeep', '/')) or triggered_key.startswith('processed/'):
+            return {'statusCode': 200, 'body': json.dumps({'message': 'Skipped'})}
         
-        if not all_emails:
-            return {
-                'statusCode': 200,
-                'body': json.dumps({
-                    'message': 'No emails found to process',
-                })
-            }
+        # Determine if email is ham (0) or spam (1)
+        if 'raw/ham/' in triggered_key:
+            label = 0
+        elif 'raw/spam/' in triggered_key:
+            label = 1
+        else:
+            return {'statusCode': 400, 'body': json.dumps({'message': 'Invalid folder'})}
         
-        df = pd.DataFrame(all_emails)
+        # Read and clean the email content
+        file_obj = s3_client.get_object(Bucket=bucket_name, Key=triggered_key)
+        content = file_obj['Body'].read().decode('utf-8', errors='ignore')
+        cleaned_text = clean_text(content)
         
+        # Load existing CSV or create new one
+        output_key = 'processed/email.csv'
+        try:
+            csv_obj = s3_client.get_object(Bucket=bucket_name, Key=output_key)
+            df = pd.read_csv(io.BytesIO(csv_obj['Body'].read()))
+        except s3_client.exceptions.NoSuchKey:
+            df = pd.DataFrame(columns=['text', 'label'])
+        
+        # Append new email to DataFrame
+        df = pd.concat([df, pd.DataFrame([{'text': cleaned_text, 'label': label}])], ignore_index=True)
+        
+        # Save updated CSV back to S3
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
-        
-        output_key = 'processed/email.csv'
         s3_client.put_object(
             Bucket=bucket_name,
             Key=output_key,
@@ -96,20 +64,16 @@ def lambda_handler(event, context):
             ContentType='text/csv'
         )
         
-        print(f"Successfully created {output_key}")
-        
+        print(f"Success! Total emails in CSV: {len(df)}")
         return {
             'statusCode': 200,
             'body': json.dumps({
-                'message': 'Processing complete'
+                'message': 'Email processed',
+                'file': triggered_key,
+                'total_emails': len(df)
             })
         }
         
     except Exception as e:
         print(f"Error: {str(e)}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({
-                'message': "Internal server error",
-            })
-        }
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
