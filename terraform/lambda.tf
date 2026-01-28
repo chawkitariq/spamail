@@ -1,29 +1,33 @@
-# Lambda Function for Endpoint Deployment
-data "archive_file" "preprocess_lambda" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambdas/preprocess"
-  output_path = "${path.module}/../lambdas/preprocess/lambda_handler.zip"
+resource "null_resource" "docker_build_push" {
+  provisioner "local-exec" {
+    command = <<EOT
+      docker build -t ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest -f ${path.module}/../lambdas/Dockerfile ${path.module}/../lambdas/preprocess/
+      aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${aws_ecr_repository.spamail.repository_url}
+      docker push ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest
+    EOT
+  }
 }
 
-# Lambda Function
 resource "aws_lambda_function" "preprocess_lambda" {
-  filename         = data.archive_file.preprocess_lambda.output_path
-  function_name    = "spamail-preprocess"
-  role            = aws_iam_role.lambda_role.arn
-  handler         = "lambda_handler.lambda_handler"
-  source_code_hash = filebase64sha256(data.archive_file.preprocess_lambda.output_path)
-  runtime         = "python3.11"
-  timeout         = 300
-  memory_size     = 512
+  function_name = "spamail-preprocess"
+  role          = aws_iam_role.lambda_role.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest"
+  timeout       = 300
+  memory_size   = 1024
 
   environment {
     variables = {
       BUCKET_NAME = aws_s3_bucket.spamail_bucket.id
     }
   }
+
+  depends_on = [
+    aws_ecr_repository.spamail,
+    null_resource.docker_build_push
+  ]
 }
 
-# Permission for S3 to invoke Lambda
 resource "aws_lambda_permission" "allow_s3_invoke" {
   statement_id  = "AllowExecutionFromS3"
   action        = "lambda:InvokeFunction"

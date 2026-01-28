@@ -17,3 +17,13 @@ output "lambda_function_arn" {
   description = "ARN of the Lambda function"
   value       = aws_lambda_function.preprocess_lambda.arn
 }
+
+output "ecr_repository_url" {
+  description = "URL of the ECR repository for all spamail images"
+  value       = aws_ecr_repository.spamail.repository_url
+}
+
+output "ecr_repository_name" {
+  description = "Name of the ECR repository"
+  value       = aws_ecr_repository.spamail.name
+}
