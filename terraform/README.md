@@ -1,134 +1,71 @@
-# Spamail Terraform Infrastructure
+# Spamail AWS Infrastructure
 
-This directory contains Terraform configurations for deploying the Spamail infrastructure on AWS.
+Deploy the Spamail email preprocessing pipeline to AWS using Terraform.
 
-## Architecture
+## What It Does
 
-- **S3 Bucket** (`spamail-bucket`): Storage for email data
-  - `raw/ham/`: Ham (non-spam) email files
-  - `raw/spam/`: Spam email files
-  - `processed/`: Generated `email.csv` file
-  
-- **Lambda Function** (`spamail-preprocess`): Triggered when new files are uploaded to `raw/` folder
-  - Processes all emails in `raw/ham/` and `raw/spam/`
-  - Generates consolidated `email.csv` in `processed/` folder
+- **S3 Bucket**: Stores raw emails and processed CSV
+- **Lambda Function**: Automatically processes uploaded emails
+- **ECR Repository**: Hosts the Lambda container image
 
-## Prerequisites
+## Quick Start
 
-1. AWS CLI configured with appropriate credentials
-2. Terraform installed (>= 1.0)
-3. Python 3.11
+### 1. Prerequisites
+- AWS CLI configured
+- Terraform installed
+- Docker installed
 
-## Setup Steps
-
-### 1. Build Lambda Package
-
-```bash
-cd ../lambdas/preprocess
-chmod +x build.sh
-./build.sh
-```
-
-### 2. Create Pandas Layer (Optional)
-
-For pandas support, you have two options:
-
-**Option A: Use AWS-managed layer (Recommended)**
-
-Update `lambda.tf` to use AWS's managed pandas layer or a public layer from Klayers:
-```hcl
-# Replace the pandas_layer resource with:
-data "aws_lambda_layer_version" "pandas" {
-  layer_name = "AWSSDKPandas-Python311"  # AWS managed layer
-}
-
-# Then use: layers = [data.aws_lambda_layer_version.pandas.arn]
-```
-
-**Option B: Create custom layer**
-
-```bash
-mkdir -p lambdas/layers/python
-pip install pandas -t lambdas/layers/python/
-cd lambdas/layers
-zip -r pandas_layer.zip python/
-cd ../../terraform
-```
-
-### 3. Initialize Terraform
-
+### 2. Deploy Infrastructure
 ```bash
 cd terraform
-terraform init
-```
-
-### 4. Plan Deployment
-
-```bash
+terraform init \
+  -backend-config="bucket=ct-terraform-state-backend" \
+  -backend-config="key=spamail-terraform.tfstate" \
+  -backend-config="region=eu-west-3"
 terraform plan
-```
-
-### 5. Apply Configuration
-
-```bash
 terraform apply
 ```
 
-Review the plan and type `yes` to confirm.
-
-## Usage
-
-### Upload Test Files
-
+### 3. Upload Emails
 ```bash
 # Upload ham emails
-aws s3 cp ../datas/raw/ham/ s3://spamail-bucket/raw/ham/ --recursive
+aws s3 rsync ../datas/raw/ham/ s3://spamail-bucket/raw/ham/ --recursive
 
 # Upload spam emails
-aws s3 cp ../datas/raw/spam/ s3://spamail-bucket/raw/spam/ --recursive
+aws s3 rsync ../datas/raw/spam/ s3://spamail-bucket/raw/spam/ --recursive
 ```
 
-The Lambda function will automatically trigger and create `processed/email.csv`.
-
-### Download Processed File
-
+### 4. Download Results
 ```bash
 aws s3 cp s3://spamail-bucket/processed/email.csv ./
 ```
 
-### Monitor Lambda Logs
+## How It Works
 
-```bash
-aws logs tail /aws/lambda/spamail-preprocess --follow
+1. **Upload Email** → File goes to `raw/ham/` or `raw/spam/`
+2. **Lambda Triggers** → Processes only that specific file
+3. **CSV Updates** → Appends cleaned email to `processed/email.csv`
+4. **No Loops** → Skips processed files to prevent infinite triggers
+
+## Architecture
+
+```
+S3 Upload → Lambda → Clean Text → Append to CSV
 ```
 
-## Clean Up
+- **Input**: Raw email files in `raw/ham/` or `raw/spam/`
+- **Processing**: Removes HTML, special chars, converts to lowercase
+- **Output**: CSV with `text` and `label` columns (0=ham, 1=spam)
 
-To destroy all resources:
+## Clean Up
 
 ```bash
 terraform destroy
 ```
 
-## Variables
-
-- `aws_region`: AWS region (default: `us-east-1`)
-- `bucket_name`: S3 bucket name (default: `spamail-bucket`)
-
-Override with:
-```bash
-terraform apply -var="aws_region=eu-west-1"
-```
-
-Or create a `terraform.tfvars` file:
-```hcl
-aws_region  = "eu-west-1"
-bucket_name = "my-custom-bucket-name"
-```
-
 ## Notes
 
-- The S3 bucket name must be globally unique. If `spamail-bucket` is taken, update the variable.
-- Lambda timeout is set to 300 seconds (5 minutes) to handle large batches.
-- Versioning is enabled on the S3 bucket for data protection.
-- CloudWatch logs retention is set to 7 days.
+- Lambda processes **one file at a time** (not all files)
+- Prevents infinite loops by ignoring `processed/` folder
+- Uses Docker container for dependencies (pandas, etc.)
+- Timeout: 5 minutes, Memory: 1GB
