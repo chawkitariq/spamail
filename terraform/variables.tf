@@ -15,3 +15,9 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "training_instance_type" {
+  description = "EC2 instance type for SageMaker training jobs"
+  type        = string
+  default     = "ml.m5.large"
+}

@@ -1,3 +1,18 @@
+data "archive_file" "deploy_lambda" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambdas/deploy"
+  output_path = "${path.module}/../lambdas/deploy/lambda_handler.zip"
+}
+
+resource "aws_lambda_function" "deploy_endpoint" {
+  filename      = data.archive_file.deploy_lambda.output_path
+  function_name = "${local.prefix_name}-deploy-endpoint"
+  role          = aws_iam_role.lambda_deploy.arn
+  handler       = "lambda_handler.lambda_handler"
+  runtime       = "python3.11"
+  timeout       = 900
+}
+
 resource "null_resource" "docker_build_push" {
   provisioner "local-exec" {
     command = <<EOT
@@ -41,4 +56,3 @@ resource "aws_lambda_permission" "allow_s3_invoke" {
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.spamail_bucket.arn
 }
-

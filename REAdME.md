@@ -154,6 +154,80 @@ Deploy the preprocessing pipeline to AWS using Terraform for automated email pro
 3. **Lambda Processes** → Processes ALL emails in that folder
 4. **CSV Updates** → Appends cleaned emails to `processed/email.csv`
 
+---
+
+## SageMaker ML Deployment
+
+Train and deploy the spam classifier using AWS SageMaker with automated pipelines and serverless inference.
+
+### Architecture
+
+- **SageMaker Pipeline**: End-to-end ML workflow (train → register → deploy)
+- **Serverless Endpoint**: Auto-scaling inference API
+- **API Gateway**: REST API for predictions
+- **Docker Containers**: Custom training and inference images
+
+### Deploy ML Pipeline
+
+1. **Build Docker Images**
+   ```bash
+   # Get repository URLs from Terraform output
+   terraform output ecr_training_repository_url
+   terraform output ecr_inference_repository_url
+   
+   # Build and push training image
+   cd sagemaker/train
+   docker build -t <training-repo-url>:latest .
+   aws ecr get-login-password --region eu-west-3 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.eu-west-3.amazonaws.com
+   docker push <training-repo-url>:latest
+   
+   # Build and push inference image
+   cd ../inference
+   docker build -t <inference-repo-url>:latest .
+   docker push <inference-repo-url>:latest
+   ```
+
+2. **Upload Training Data**
+   ```bash
+   # Upload processed CSV to S3
+   aws s3 cp datas/processed/email.csv s3://dev-spamail-ml/input/
+   ```
+
+3. **Start Pipeline**
+   ```bash
+   # Execute SageMaker pipeline
+   aws sagemaker start-pipeline-execution \
+     --pipeline-name dev-spamail-pipeline \
+     --region eu-west-3
+   ```
+
+4. **Test API Endpoint**
+   ```bash
+   # Get API URL
+   terraform output api_gateway_url
+   
+   # Make prediction
+   curl -X POST https://<api-url>/prod/predict \
+     -H "Content-Type: application/json" \
+     -d '{
+       "instances": [
+         {"text": "Congratulations! You won a prize!"},
+         {"text": "Meeting notes from today"}
+       ]
+     }'
+   ```
+
+   **Response:**
+   ```json
+   {
+     "predictions": [1, 0],
+     "labels": ["spam", "ham"],
+     "probabilities": [[0.05, 0.95], [0.98, 0.02]]
+   }
+   ```
+
+For detailed SageMaker documentation, see [sagemaker/README.md](sagemaker/README.md)
+
 ### Clean Up AWS Resources
 
 ```bash
