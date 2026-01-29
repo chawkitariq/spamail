@@ -13,22 +13,6 @@ resource "aws_lambda_function" "deploy_endpoint" {
   timeout       = 900
 }
 
-resource "null_resource" "docker_build_push" {
-  provisioner "local-exec" {
-    command = <<EOT
-      docker build -t ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest -f ${path.module}/../lambdas/Dockerfile ${path.module}/../lambdas/preprocess/
-      aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.spamail.repository_url}
-      docker push ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest
-    EOT
-  }
-
-  triggers = {
-    dockerfile_hash = filemd5("${path.module}/../lambdas/Dockerfile")
-    source_hash     = filemd5("${path.module}/../lambdas/preprocess/lambda_handler.py")
-    requirements    = filemd5("${path.module}/../lambdas/preprocess/requirements.txt")
-  }
-}
-
 resource "aws_lambda_function" "preprocess_lambda" {
   function_name = "${local.prefix_name}-preprocess"
   role          = aws_iam_role.lambda_role.arn
@@ -45,7 +29,7 @@ resource "aws_lambda_function" "preprocess_lambda" {
 
   depends_on = [
     aws_ecr_repository.spamail,
-    null_resource.docker_build_push
+    null_resource.docker_build_push_preprocess
   ]
 }
 
