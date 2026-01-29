@@ -6,6 +6,12 @@ resource "null_resource" "docker_build_push" {
       docker push ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest
     EOT
   }
+
+  triggers = {
+    dockerfile_hash = filemd5("${path.module}/../lambdas/Dockerfile")
+    source_hash     = filemd5("${path.module}/../lambdas/preprocess/lambda_handler.py")
+    requirements    = filemd5("${path.module}/../lambdas/preprocess/requirements.txt")
+  }
 }
 
 resource "aws_lambda_function" "preprocess_lambda" {
