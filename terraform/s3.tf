@@ -9,13 +9,13 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.preprocess_lambda.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "raw/ham/"
+    filter_prefix       = "raw/ham/_COMPLETE"
   }
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.preprocess_lambda.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "raw/spam/"
+    filter_prefix       = "raw/spam/_COMPLETE"
   }
 
   depends_on = [aws_lambda_permission.allow_s3_invoke]

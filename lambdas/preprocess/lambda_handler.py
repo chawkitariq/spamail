@@ -16,7 +16,7 @@ def clean_text(text):
 
 def should_skip_file(file_key):
     """Check if file should be skipped (directories, metadata, or processed files)."""
-    return file_key.endswith(('.gitkeep', '/')) or file_key.startswith('processed/')
+    return file_key.endswith(('.gitkeep', '_COMPLETE', '/')) or file_key.startswith('processed/')
 
 
 def get_email_label(file_key):
