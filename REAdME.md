@@ -94,18 +94,71 @@ Email: Can we reschedule our appointment to next week?
 
 ---
 
-## Evaluation Metrics
-- **Precision** → How often predicted spam is truly spam.  
-- **Recall** → How many real spam emails were caught.  
-- **F1‑score** → Balance between precision and recall.  
-- **Accuracy** → Overall correctness.
+## AWS Deployment
 
-Example report:
-```
-precision    recall  f1-score   support
-0 (ham)       0.99      0.97      0.98
-1 (spam)      0.91      0.96      0.94
-accuracy                           0.97
+Deploy the preprocessing pipeline to AWS using Terraform for automated email processing.
+
+### Architecture
+
+![Spamail AWS Architecture](docs/spamail.png)
+
+### AWS Components
+
+- **S3 Bucket**: Stores raw emails and processed CSV data
+- **Lambda Function**: Automatically processes emails when triggered
+- **ECR Repository**: Hosts the Lambda container image
+- **CloudWatch**: Monitors Lambda execution and logs
+
+### Deploy to AWS
+
+1. **Prerequisites**
+   - AWS CLI configured with appropriate permissions
+   - Terraform installed
+   - Docker installed
+
+2. **Deploy Infrastructure**
+   ```bash
+   cd terraform
+   terraform init \
+     -backend-config="bucket=ct-terraform-state-backend" \
+     -backend-config="key=spamail-terraform.tfstate" \
+     -backend-config="region=eu-west-3"
+   terraform plan
+   terraform apply
+   ```
+
+3. **Upload and Process Emails**
+   ```bash
+   # Upload ham emails to S3
+   aws s3 rsync datas/raw/ham/ s3://spamail-bucket/raw/ham/ --recursive
+   
+   # Trigger ham processing
+   aws s3 cp datas/raw/ham/_COMPLETE s3://spamail-bucket/raw/ham/_COMPLETE
+   
+   # Upload spam emails to S3
+   aws s3 rsync datas/raw/spam/ s3://spamail-bucket/raw/spam/ --recursive
+   
+   # Trigger spam processing
+   aws s3 cp datas/raw/spam/_COMPLETE s3://spamail-bucket/raw/spam/_COMPLETE
+   ```
+
+4. **Download Processed Data**
+   ```bash
+   aws s3 cp s3://spamail-bucket/processed/email.csv datas/processed/
+   ```
+
+### How AWS Processing Works
+
+1. **Upload Emails** → Files go to `raw/ham/` or `raw/spam/` in S3
+2. **Upload _COMPLETE** → Upload `_COMPLETE` file to trigger Lambda
+3. **Lambda Processes** → Processes ALL emails in that folder
+4. **CSV Updates** → Appends cleaned emails to `processed/email.csv`
+
+### Clean Up AWS Resources
+
+```bash
+cd terraform
+terraform destroy
 ```
 
 ---
