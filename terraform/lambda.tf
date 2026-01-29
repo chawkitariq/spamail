@@ -1,7 +1,7 @@
 resource "null_resource" "docker_build_push" {
   provisioner "local-exec" {
     command = <<EOT
-      docker build -t ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest -f ${path.module}/../lambdas/Dockerfile ${path.module}/../lambdas/preprocess/ --network host
+      docker build -t ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest -f ${path.module}/../lambdas/Dockerfile ${path.module}/../lambdas/preprocess/
       aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.spamail.repository_url}
       docker push ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest
     EOT
