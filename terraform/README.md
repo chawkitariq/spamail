@@ -29,21 +29,21 @@ terraform apply
 ### 3. Upload Emails and Trigger Processing
 ```bash
 # Upload ham emails
-aws s3 rsync ../datas/raw/ham/ s3://spamail-bucket/raw/ham/ --recursive
+aws s3 rsync ../datas/raw/ham/ s3://dev-spamail-bucket/raw/ham/ --recursive
 
 # Trigger ham processing
-aws s3 cp ../datas/raw/ham/_COMPLETE s3://spamail-bucket/raw/ham/_COMPLETE
+aws s3 cp ../datas/raw/ham/_COMPLETE s3://dev-spamail-bucket/raw/ham/_COMPLETE
 
 # Upload spam emails
-aws s3 rsync ../datas/raw/spam/ s3://spamail-bucket/raw/spam/ --recursive
+aws s3 rsync ../datas/raw/spam/ s3://dev-spamail-bucket/raw/spam/ --recursive
 
 # Trigger spam processing
-aws s3 cp ../datas/raw/spam/_COMPLETE s3://spamail-bucket/raw/spam/_COMPLETE
+aws s3 cp ../datas/raw/spam/_COMPLETE s3://dev-spamail-bucket/raw/spam/_COMPLETE
 ```
 
 ### 4. Download Results
 ```bash
-aws s3 cp s3://spamail-bucket/processed/email.csv ./
+aws s3 cp s3://dev-spamail-bucket/processed/email.csv ./
 ```
 
 ## How It Works

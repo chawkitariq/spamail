@@ -15,7 +15,7 @@ resource "null_resource" "docker_build_push" {
 }
 
 resource "aws_lambda_function" "preprocess_lambda" {
-  function_name = "spamail-preprocess"
+  function_name = "${local.prefix_name}-preprocess"
   role          = aws_iam_role.lambda_role.arn
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest"

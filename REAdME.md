@@ -130,21 +130,21 @@ Deploy the preprocessing pipeline to AWS using Terraform for automated email pro
 3. **Upload and Process Emails**
    ```bash
    # Upload ham emails to S3
-   aws s3 rsync datas/raw/ham/ s3://spamail-bucket/raw/ham/ --recursive
+   aws s3 rsync datas/raw/ham/ s3://dev-spamail-bucket/raw/ham/ --recursive
    
    # Trigger ham processing
-   aws s3 cp datas/raw/ham/_COMPLETE s3://spamail-bucket/raw/ham/_COMPLETE
+   aws s3 cp datas/raw/ham/_COMPLETE s3://dev-spamail-bucket/raw/ham/_COMPLETE
    
    # Upload spam emails to S3
-   aws s3 rsync datas/raw/spam/ s3://spamail-bucket/raw/spam/ --recursive
+   aws s3 rsync datas/raw/spam/ s3://dev-spamail-bucket/raw/spam/ --recursive
    
    # Trigger spam processing
-   aws s3 cp datas/raw/spam/_COMPLETE s3://spamail-bucket/raw/spam/_COMPLETE
+   aws s3 cp datas/raw/spam/_COMPLETE s3://dev-spamail-bucket/raw/spam/_COMPLETE
    ```
 
 4. **Download Processed Data**
    ```bash
-   aws s3 cp s3://spamail-bucket/processed/email.csv datas/processed/
+   aws s3 cp s3://dev-spamail-bucket/processed/email.csv datas/processed/
    ```
 
 ### How AWS Processing Works

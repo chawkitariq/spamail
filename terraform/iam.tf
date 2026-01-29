@@ -1,6 +1,6 @@
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_role" {
-  name = "spamail_lambda_role"
+  name = "${local.prefix_name}_lambda_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -18,7 +18,7 @@ resource "aws_iam_role" "lambda_role" {
 
 # IAM Policy for Lambda to access S3 and CloudWatch Logs
 resource "aws_iam_role_policy" "lambda_policy" {
-  name = "spamail_lambda_policy"
+  name = "${local.prefix_name}_lambda_policy"
   role = aws_iam_role.lambda_role.id
 
   policy = jsonencode({

@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "spamail_bucket" {
-  bucket        = "spamail-bucket"
+  bucket        = "${local.prefix_name}-bucket"
   force_destroy = true
 }
 
