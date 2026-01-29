@@ -42,7 +42,7 @@ resource "aws_sagemaker_pipeline" "spamail" {
           ResourceConfig = {
             InstanceCount  = 1
             InstanceType   = var.training_instance_type
-            VolumeSizeInGB = 10
+            VolumeSizeInGB = 5
           }
           RoleArn = aws_iam_role.sagemaker_execution.arn
           StoppingCondition = {

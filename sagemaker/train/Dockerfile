@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY train.py /opt/ml/code/train.py
+COPY train.py /opt/ml/code/train
+RUN chmod +x /opt/ml/code/train
 
-ENV SAGEMAKER_PROGRAM train.py
+ENV PATH="/opt/ml/code:${PATH}"
