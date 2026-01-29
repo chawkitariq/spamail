@@ -4,9 +4,12 @@ Deploy the Spamail email preprocessing pipeline to AWS using Terraform.
 
 ## What It Does
 
-- **S3 Bucket**: Stores raw emails and processed CSV
-- **Lambda Function**: Automatically processes uploaded emails
-- **ECR Repository**: Hosts the Lambda container image
+- **S3 Buckets**: Store raw emails, processed CSV, and ML data/artifacts
+- **Lambda Functions**: Process emails and deploy SageMaker endpoints
+- **ECR Repositories**: Host Lambda and SageMaker container images
+- **SageMaker Pipeline**: Automated ML training and deployment
+- **API Gateway**: REST API for spam classification predictions
+- **CloudWatch**: Monitoring and logging for all services
 
 ## Quick Start
 
@@ -52,17 +55,43 @@ aws s3 cp s3://dev-spamail-bucket/processed/email.csv ./
 2. **Upload _COMPLETE** → Upload `_COMPLETE` file to trigger processing
 3. **Lambda Processes** → Processes ALL emails in that folder
 4. **CSV Updates** → Appends cleaned emails to `processed/email.csv`
+5. **Train Model** → SageMaker pipeline trains spam classifier
+6. **Deploy Endpoint** → Model deployed as serverless endpoint
+7. **Classify Emails** → API Gateway provides prediction API
 
 ## Architecture
 
 ```
 Upload Emails → Upload _COMPLETE → Lambda → Process All → Append to CSV
+                                      ↓
+SageMaker Pipeline ← Train Model ← Deploy Endpoint ← API Gateway ← Predictions
 ```
 
 - **Input**: Raw email files in `raw/ham/` or `raw/spam/`
 - **Trigger**: `_COMPLETE` file uploaded to same folder
 - **Processing**: Removes HTML, special chars, converts to lowercase
 - **Output**: CSV with `text` and `label` columns (0=ham, 1=spam)
+- **ML Pipeline**: Automated training with TF-IDF + MultinomialNB
+- **Inference**: REST API for real-time spam classification
+
+## SageMaker Components
+
+### Training Pipeline
+- **Container**: Custom training image with scikit-learn
+- **Algorithm**: TF-IDF vectorization + MultinomialNB classifier
+- **Input**: Processed email CSV from S3
+- **Output**: Trained model artifacts saved to S3
+
+### Inference Endpoint
+- **Container**: Flask app with nginx/gunicorn
+- **API**: `/ping` health check, `/invocations` for predictions
+- **Input**: JSON with email text
+- **Output**: Spam probability and classification
+
+### API Gateway
+- **Endpoints**: REST API for spam classification
+- **Integration**: Serverless SageMaker endpoint
+- **Authentication**: IAM-based (configurable)
 
 ## Clean Up
 

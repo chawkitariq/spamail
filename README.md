@@ -1,8 +1,25 @@
 # Spamail – Spam Email Classifier
 
 ## Overview
-Spamail is a machine learning project that detects **spam vs ham (non‑spam)** emails.  
-It takes raw email files, preprocesses them into structured data, trains a classifier, and provides inference scripts for testing and deployment.
+Spamail is a complete machine learning pipeline for spam email classification with both local development and cloud deployment capabilities.
+
+**Local Development:**
+- Preprocess raw email files into structured CSV data
+- Train spam classification models using scikit-learn
+- Test models with inference scripts
+
+**AWS Cloud Deployment:**
+- Automated email processing with AWS Lambda
+- End-to-end ML pipeline with SageMaker
+- Serverless inference API with API Gateway
+- Infrastructure as Code with Terraform
+
+**Key Features:**
+- Batch email processing triggered by file uploads
+- TF-IDF vectorization + Multinomial Naive Bayes classification
+- Docker containerized training and inference
+- REST API for real-time predictions
+- Complete monitoring and logging with CloudWatch
 
 ---
 
@@ -104,10 +121,12 @@ Deploy the preprocessing pipeline to AWS using Terraform for automated email pro
 
 ### AWS Components
 
-- **S3 Bucket**: Stores raw emails and processed CSV data
-- **Lambda Function**: Automatically processes emails when triggered
-- **ECR Repository**: Hosts the Lambda container image
-- **CloudWatch**: Monitors Lambda execution and logs
+- **S3 Buckets**: Store raw emails, processed CSV, and ML data/artifacts
+- **Lambda Functions**: Process emails and deploy SageMaker endpoints
+- **ECR Repositories**: Host Lambda and SageMaker container images
+- **SageMaker Pipeline**: Automated ML training and deployment
+- **API Gateway**: REST API for spam classification predictions
+- **CloudWatch**: Monitoring and logging for all services
 
 ### Deploy to AWS
 
@@ -153,6 +172,9 @@ Deploy the preprocessing pipeline to AWS using Terraform for automated email pro
 2. **Upload _COMPLETE** → Upload `_COMPLETE` file to trigger Lambda
 3. **Lambda Processes** → Processes ALL emails in that folder
 4. **CSV Updates** → Appends cleaned emails to `processed/email.csv`
+5. **Train Model** → SageMaker pipeline trains on processed data
+6. **Deploy Endpoint** → Lambda deploys serverless inference endpoint
+7. **API Predictions** → API Gateway provides REST API access
 
 ---
 
