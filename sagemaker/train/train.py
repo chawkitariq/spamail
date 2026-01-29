@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import argparse
 import joblib
@@ -10,16 +9,12 @@ from sklearn.metrics import classification_report, accuracy_score
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-dir', type=str, default=os.environ.get('SM_MODEL_DIR', '/opt/ml/model'))
-    parser.add_argument('--train', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train'))
+    parser.add_argument('--model-dir', type=str, default=os.environ.get('SM_MODEL_DIR'))
+    parser.add_argument('--train', type=str, default=os.environ.get('SM_CHANNEL_TRAIN'))
     args = parser.parse_args()
-
-    print(f"Model dir: {args.model_dir}")
-    print(f"Train data dir: {args.train}")
 
     # Load dataset
     data_path = os.path.join(args.train, 'email.csv')
-    print(f"Loading data from: {data_path}")
     df = pd.read_csv(data_path)
     
     texts = df["text"].astype(str).tolist()
