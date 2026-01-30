@@ -12,3 +12,8 @@ output "api_gateway_url" {
   description = "URL of the API Gateway endpoint"
   value       = "${aws_api_gateway_stage.default.invoke_url}/predict"
 }
+
+output "custom_domain_url" {
+  description = "Custom domain URL (if configured)"
+  value       = "https://${var.domain_name}/predict"
+}

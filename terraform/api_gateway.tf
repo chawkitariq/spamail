@@ -1,17 +1,14 @@
-# API Gateway REST API
 resource "aws_api_gateway_rest_api" "main" {
   name        = "${local.prefix_name}-api"
   description = "REST API for ${local.prefix_name} spam classifier predictions"
 }
 
-# Root resource ("/predict")
 resource "aws_api_gateway_resource" "predict" {
   rest_api_id = aws_api_gateway_rest_api.main.id
   parent_id   = aws_api_gateway_rest_api.main.root_resource_id
   path_part   = "predict"
 }
 
-# Method for POST /predict
 resource "aws_api_gateway_method" "predict_post" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   resource_id   = aws_api_gateway_resource.predict.id
@@ -19,7 +16,6 @@ resource "aws_api_gateway_method" "predict_post" {
   authorization = "NONE"
 }
 
-# Integration with SageMaker Runtime
 resource "aws_api_gateway_integration" "sagemaker" {
   rest_api_id             = aws_api_gateway_rest_api.main.id
   resource_id             = aws_api_gateway_resource.predict.id
@@ -34,7 +30,6 @@ resource "aws_api_gateway_integration" "sagemaker" {
   }
 }
 
-# Method response for 200
 resource "aws_api_gateway_method_response" "response_200" {
   rest_api_id = aws_api_gateway_rest_api.main.id
   resource_id = aws_api_gateway_resource.predict.id
@@ -46,7 +41,6 @@ resource "aws_api_gateway_method_response" "response_200" {
   }
 }
 
-# Integration response
 resource "aws_api_gateway_integration_response" "response" {
   rest_api_id = aws_api_gateway_rest_api.main.id
   resource_id = aws_api_gateway_resource.predict.id
@@ -60,7 +54,6 @@ resource "aws_api_gateway_integration_response" "response" {
   depends_on = [aws_api_gateway_integration.sagemaker]
 }
 
-# Deployment
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
   
@@ -87,7 +80,6 @@ resource "aws_api_gateway_account" "cloudwatch_role" {
   cloudwatch_role_arn = aws_iam_role.apigateway_sagemaker_role.arn
 }
 
-# Stage
 resource "aws_api_gateway_stage" "default" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   deployment_id = aws_api_gateway_deployment.main.id
@@ -110,4 +102,19 @@ resource "aws_api_gateway_stage" "default" {
   depends_on = [
     aws_api_gateway_account.cloudwatch_role
   ]
+}
+
+resource "aws_api_gateway_domain_name" "api" {
+  domain_name     = var.domain_name
+  regional_certificate_arn = aws_acm_certificate_validation.api_gateway.certificate_arn
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
+resource "aws_api_gateway_base_path_mapping" "api" {
+  api_id      = aws_api_gateway_rest_api.main.id
+  stage_name  = aws_api_gateway_stage.default.stage_name
+  domain_name = aws_api_gateway_domain_name.api.domain_name
 }
