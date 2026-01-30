@@ -3,6 +3,8 @@
 ## Overview
 Spamail is a machine learning pipeline for spam email classification with local development capabilities and AWS cloud deployment.
 
+![Spamail Schema](docs/spamail.png)
+
 **Local Development:**
 - Preprocess raw email files into structured CSV data
 - Train spam classification models using scikit-learn

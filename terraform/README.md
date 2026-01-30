@@ -4,6 +4,8 @@ Deploy the Spamail email preprocessing pipeline to AWS using Terraform.
 
 ## What It Does
 
+![Spamail Schema](../docs/spamail.png)
+
 - **S3 Buckets**: Store raw emails, processed CSV, and ML data/artifacts
 - **ECR Repositories**: Host SageMaker container images
 - **SageMaker Pipeline**: Automated ML training with preprocessing step
