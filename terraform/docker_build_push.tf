@@ -1,15 +1,14 @@
 resource "null_resource" "docker_build_push_preprocess" {
   provisioner "local-exec" {
     command = <<EOT
-      docker build -t ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest -f ${path.module}/../lambdas/Dockerfile ${path.module}/../lambdas/preprocess/ --network host
+      docker build -t ${aws_ecr_repository.spamail.repository_url}:preprocess-latest -f ${path.module}/../sagemaker/preprocess/Dockerfile ${path.module}/../sagemaker/preprocess/ --network host
       aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.spamail.repository_url}
-      docker push ${aws_ecr_repository.spamail.repository_url}:preprocess-lambda-latest
+      docker push ${aws_ecr_repository.spamail.repository_url}:preprocess-latest
     EOT
   }
 
   triggers = {
-    dockerfile_hash = filemd5("${path.module}/../lambdas/Dockerfile")
-    all_files_hash = md5(join("", [for f in fileset("${path.module}/../lambdas/preprocess", "**") : filemd5("${path.module}/../lambdas/preprocess/${f}")]))
+    all_files_hash = md5(join("", [for f in fileset("${path.module}/../sagemaker/preprocess", "**") : filemd5("${path.module}/../sagemaker/preprocess/${f}")]))
   }
 
   depends_on = [aws_ecr_repository.spamail]
@@ -23,6 +22,7 @@ resource "null_resource" "docker_build_push_train" {
       docker push ${aws_ecr_repository.spamail.repository_url}:train-latest
     EOT
   }
+
   triggers = {
     all_files_hash = md5(join("", [for f in fileset("${path.module}/../sagemaker/train", "**") : filemd5("${path.module}/../sagemaker/train/${f}")]))
   }

@@ -16,12 +16,6 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "training_instance_type" {
-  description = "EC2 instance type for SageMaker training jobs"
-  type        = string
-  default     = "ml.m5.large"
-}
-
 variable "domain_name" {
   description = "Custom domain name for API Gateway (e.g., api.example.com). Leave empty to skip custom domain setup."
   type        = string

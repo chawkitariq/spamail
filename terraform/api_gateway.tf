@@ -56,7 +56,7 @@ resource "aws_api_gateway_integration_response" "response" {
 
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
-  
+
   triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_resource.predict.id,
@@ -105,7 +105,7 @@ resource "aws_api_gateway_stage" "default" {
 }
 
 resource "aws_api_gateway_domain_name" "api" {
-  domain_name     = var.domain_name
+  domain_name              = var.domain_name
   regional_certificate_arn = aws_acm_certificate_validation.api_gateway.certificate_arn
 
   endpoint_configuration {

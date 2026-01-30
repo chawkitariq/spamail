@@ -9,8 +9,51 @@ resource "aws_sagemaker_pipeline" "spamail" {
 
     Steps = [
       {
-        Name = "TrainModel"
-        Type = "Training"
+        Name = "PreprocessEmails"
+        Type = "Processing"
+        Arguments = {
+          ProcessingResources = {
+            ClusterConfig = {
+              InstanceCount  = 1
+              InstanceType   = "ml.m5.large"
+              VolumeSizeInGB = 10
+            }
+          }
+          AppSpecification = {
+            ImageUri = "${aws_ecr_repository.spamail.repository_url}:preprocess-latest"
+          }
+          ProcessingInputs = [
+            {
+              InputName = "raw"
+              S3Input = {
+                S3Uri                  = "s3://${aws_s3_bucket.spamail_bucket.id}/raw/"
+                LocalPath              = "/opt/ml/processing/input"
+                S3DataType             = "S3Prefix"
+                S3InputMode            = "File"
+                S3DataDistributionType = "FullyReplicated"
+              }
+            }
+          ]
+          ProcessingOutputConfig = {
+            Outputs = [
+              {
+                OutputName = "preprocessed-data"
+                S3Output = {
+                  S3Uri        = "s3://${aws_s3_bucket.spamail_bucket.id}/processed/"
+                  LocalPath    = "/opt/ml/processing/output"
+                  S3UploadMode = "EndOfJob"
+                }
+              }
+            ]
+          }
+          RoleArn = aws_iam_role.sagemaker_execution.arn
+        }
+      },
+
+      {
+        Name      = "TrainModel"
+        Type      = "Training"
+        DependsOn = ["PreprocessEmails"]
         Arguments = {
           AlgorithmSpecification = {
             TrainingImage     = "${aws_ecr_repository.spamail.repository_url}:train-latest"
@@ -34,7 +77,7 @@ resource "aws_sagemaker_pipeline" "spamail" {
           }
           ResourceConfig = {
             InstanceCount  = 1
-            InstanceType   = var.training_instance_type
+            InstanceType   = "ml.m5.large"
             VolumeSizeInGB = 5
           }
           RoleArn = aws_iam_role.sagemaker_execution.arn
@@ -93,8 +136,4 @@ resource "aws_sagemaker_pipeline" "spamail" {
       }
     ]
   })
-
-  depends_on = [
-    aws_sagemaker_model_package_group.spamail,
-  ]
 }
