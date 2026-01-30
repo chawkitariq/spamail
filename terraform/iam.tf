@@ -47,34 +47,6 @@ resource "aws_iam_role_policy_attachment" "sagemaker_pipelines_lambda_execution"
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
 }
 
-# IAM Role for Lambda Deploy
-resource "aws_iam_role" "lambda_deploy" {
-  name = "${local.prefix_name}-lambda-deploy-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_deploy_basic" {
-  role       = aws_iam_role.lambda_deploy.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_deploy_sagemaker" {
-  role       = aws_iam_role.lambda_deploy.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
-}
-
 # IAM Role for API Gateway to invoke SageMaker
 resource "aws_iam_role" "apigateway_sagemaker_role" {
   name = "${local.prefix_name}-apigateway-sagemaker-role"
