@@ -15,3 +15,14 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "domain_name" {
+  description = "Custom domain name for API Gateway (e.g., api.example.com). Leave empty to skip custom domain setup."
+  type        = string
+  default     = "spamail.chawkitariq.fr"
+}
+
+variable "route53_zone_id" {
+  description = "Route 53 hosted zone ID for the domain. Required if domain_name is set."
+  type        = string
+}
