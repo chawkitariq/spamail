@@ -10,6 +10,7 @@ resource "aws_sagemaker_pipeline" "spamail" {
     Steps = [
       {
         Name = "PreprocessEmails"
+        DisplayName = "Preprocess Raw Emails to CSV"
         Type = "Processing"
         Arguments = {
           ProcessingResources = {
@@ -52,6 +53,7 @@ resource "aws_sagemaker_pipeline" "spamail" {
 
       {
         Name      = "TrainModel"
+        DisplayName = "Train Spam Classifier Model"
         Type      = "Training"
         DependsOn = ["PreprocessEmails"]
         Arguments = {
@@ -89,6 +91,7 @@ resource "aws_sagemaker_pipeline" "spamail" {
 
       {
         Name      = "CreateModel"
+        DisplayName = "Create SageMaker Model Artifact"
         Type      = "Model"
         DependsOn = ["TrainModel"]
         Arguments = {
@@ -103,32 +106,33 @@ resource "aws_sagemaker_pipeline" "spamail" {
       },
 
       {
-        Name : "DeployModel_EndpointConfig",
-        Type : "EndpointConfig",
-        DependsOn : ["CreateModel"],
+        Name : "DeployModel_EndpointConfig"
+        DisplayName : "Create Endpoint Config for Deployment"
+        Type : "EndpointConfig"
+        DependsOn : ["CreateModel"]
         Arguments : {
           ProductionVariants : [
             {
-              VariantName : "AllTraffic",
+              VariantName : "AllTraffic"
               ServerlessConfig : {
-                MemorySizeInMB : 2048,
+                MemorySizeInMB : 2048
                 MaxConcurrency : 4
-              },
+              }
               ModelName : {
                 Get : "Steps.CreateModel.ModelName"
-              },
+              }
             }
           ]
         },
       },
 
       {
-        Name : "DeployModel",
-        Type : "Endpoint",
-        DependsOn : ["DeployModel_EndpointConfig"],
-        DisplayName : "Deploy model (endpoint)",
+        Name : "DeployModel"
+        DisplayName : "Deploy Model as Serverless Endpoint"
+        Type : "Endpoint"
+        DependsOn : ["DeployModel_EndpointConfig"]
         Arguments : {
-          EndpointName : local.sagemaker_endpoint_name,
+          EndpointName : local.sagemaker_endpoint_name
           EndpointConfigName : {
             Get : "Steps.DeployModel_EndpointConfig.EndpointConfigName"
           }
