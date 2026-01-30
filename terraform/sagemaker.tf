@@ -2,6 +2,11 @@
 resource "aws_sagemaker_model_package_group" "spamail" {
   model_package_group_name        = "${local.prefix_name}-model-group"
   model_package_group_description = "Model package group for ${var.project_name} spam classifier"
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "aws sagemaker delete-model-package-group --model-package-group-name ${self.model_package_group_name} || true"
+  }
 }
 
 # SageMaker Pipeline
@@ -57,7 +62,7 @@ resource "aws_sagemaker_pipeline" "spamail" {
         DependsOn = ["TrainModel"]
         Arguments = {
           ModelPackageGroupName = aws_sagemaker_model_package_group.spamail.model_package_group_name
-          ModelApprovalStatus   = "Approved"
+          ModelApprovalStatus   = "PendingManualApproval"
           InferenceSpecification = {
             Containers = [
               {
@@ -89,15 +94,35 @@ resource "aws_sagemaker_pipeline" "spamail" {
       },
 
       {
-        Name        = "DeployEndpoint"
-        Type        = "Lambda"
-        DependsOn   = ["CreateModel"]
-        FunctionArn = aws_lambda_function.deploy_endpoint.arn
-        Arguments = {
-          "ModelName" : {
-            "Get" : "Steps.CreateModel.ModelName"
-          },
-          "EndpointName" : local.sagemaker_endpoint_name
+        Name : "DeployModel_EndpointConfig",
+        Type : "EndpointConfig",
+        DependsOn : ["CreateModel"],
+        Arguments : {
+          ProductionVariants : [
+            {
+              VariantName : "AllTraffic",
+              ServerlessConfig : {
+                MemorySizeInMB : 2048,
+                MaxConcurrency : 4
+              },
+              ModelName : {
+                Get : "Steps.CreateModel.ModelName"
+              },
+            }
+          ]
+        },
+      },
+
+      {
+        Name : "DeployModel",
+        Type : "Endpoint",
+        DependsOn : ["DeployModel_EndpointConfig"],
+        DisplayName : "Deploy model (endpoint)",
+        Arguments : {
+          EndpointName : local.sagemaker_endpoint_name,
+          EndpointConfigName : {
+            Get : "Steps.DeployModel_EndpointConfig.EndpointConfigName"
+          }
         }
       }
     ]
@@ -105,6 +130,5 @@ resource "aws_sagemaker_pipeline" "spamail" {
 
   depends_on = [
     aws_sagemaker_model_package_group.spamail,
-    aws_lambda_function.deploy_endpoint
   ]
 }
