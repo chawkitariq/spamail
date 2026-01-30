@@ -1,15 +1,3 @@
-# SageMaker Model Package Group
-resource "aws_sagemaker_model_package_group" "spamail" {
-  model_package_group_name        = "${local.prefix_name}-model-group"
-  model_package_group_description = "Model package group for ${var.project_name} spam classifier"
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = "aws sagemaker delete-model-package-group --model-package-group-name ${self.model_package_group_name} || true"
-  }
-}
-
-# SageMaker Pipeline
 resource "aws_sagemaker_pipeline" "spamail" {
   pipeline_name         = "${local.prefix_name}-pipeline"
   pipeline_display_name = "${var.project_name}-Pipeline"
@@ -57,31 +45,9 @@ resource "aws_sagemaker_pipeline" "spamail" {
       },
 
       {
-        Name      = "RegisterModel"
-        Type      = "RegisterModel"
-        DependsOn = ["TrainModel"]
-        Arguments = {
-          ModelPackageGroupName = aws_sagemaker_model_package_group.spamail.model_package_group_name
-          ModelApprovalStatus   = "PendingManualApproval"
-          InferenceSpecification = {
-            Containers = [
-              {
-                Image = "${aws_ecr_repository.spamail.repository_url}:inference-latest"
-                ModelDataUrl = {
-                  "Get" = "Steps.TrainModel.ModelArtifacts.S3ModelArtifacts"
-                }
-              }
-            ]
-            SupportedContentTypes      = ["application/json"]
-            SupportedResponseMIMETypes = ["application/json"]
-          }
-        }
-      },
-
-      {
         Name      = "CreateModel"
         Type      = "Model"
-        DependsOn = ["RegisterModel"]
+        DependsOn = ["TrainModel"]
         Arguments = {
           ExecutionRoleArn = aws_iam_role.sagemaker_execution.arn
           PrimaryContainer = {
