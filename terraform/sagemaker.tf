@@ -17,7 +17,7 @@ resource "aws_sagemaker_pipeline" "spamail" {
             ClusterConfig = {
               InstanceCount  = 1
               InstanceType   = "ml.m5.large"
-              VolumeSizeInGB = 10
+              VolumeSizeInGB = 5
             }
           }
           AppSpecification = {
@@ -123,6 +123,22 @@ resource "aws_sagemaker_pipeline" "spamail" {
               }
             }
           ]
+          DataCaptureConfig : {
+            EnableCapture : true
+            InitialSamplingPercentage : 100
+            DestinationS3Uri : "s3://${aws_s3_bucket.spamail_bucket.id}/monitoring/datacapture/"
+            CaptureOptions : [
+              {
+                CaptureMode : "Input"
+              },
+              {
+                CaptureMode : "Output"
+              }
+            ]
+            CaptureContentTypeHeader : {
+              JsonContentTypes : ["application/json"]
+            }
+          }
         },
       },
 

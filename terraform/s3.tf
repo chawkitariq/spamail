@@ -27,6 +27,24 @@ resource "aws_s3_object" "models_folder" {
   content = ""
 }
 
+resource "aws_s3_object" "monitoring_datacapture_folder" {
+  bucket  = aws_s3_bucket.spamail_bucket.id
+  key     = "monitoring/datacapture/"
+  content = ""
+}
+
+resource "aws_s3_object" "monitoring_baseline_folder" {
+  bucket  = aws_s3_bucket.spamail_bucket.id
+  key     = "monitoring/baseline/"
+  content = ""
+}
+
+resource "aws_s3_object" "monitoring_reports_folder" {
+  bucket  = aws_s3_bucket.spamail_bucket.id
+  key     = "monitoring/reports/"
+  content = ""
+}
+
 resource "aws_s3_bucket_server_side_encryption_configuration" "spamail_bucket" {
   bucket = aws_s3_bucket.spamail_bucket.id
 

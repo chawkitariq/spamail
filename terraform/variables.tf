@@ -26,3 +26,8 @@ variable "route53_zone_id" {
   description = "Route 53 hosted zone ID for the domain. Required if domain_name is set."
   type        = string
 }
+
+variable "alert_email" {
+  description = "Email address for Model Monitor alerts. Leave empty to skip email notifications."
+  type        = string
+}
